@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import time
+import signal
 import shutil
 import threading
 from pathlib import Path
@@ -12,6 +13,21 @@ import mutagen
 from rich.console import Console
 from rich.table import Table
 from rich.live import Live
+
+interrupt_requested = threading.Event()
+current_prompt_id: list[str | None] = [None]
+
+
+def interrupt_task():
+    pid = current_prompt_id[0]
+    if pid:
+        try:
+            requests.post(
+                f"{COMFYUI_URL}/interrupt", json={"prompt_id": pid}, timeout=5
+            )
+        except Exception:
+            pass
+
 
 COMFYUI_URL = "http://100.91.232.13:8188"
 
@@ -200,6 +216,15 @@ def render_table(tasks: list[Task]):
 
 
 def main():
+    def handle_signal(signum, frame):
+        interrupt_requested.set()
+        interrupt_task()
+        console.print("\n[yellow]Interrupted. Cancelling current task...[/yellow]")
+        sys.exit(130)
+
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGTERM, handle_signal)
+
     if len(sys.argv) < 2:
         console.print("[red]Usage: python run.py <folder_path> [workflow.json][/red]")
         sys.exit(1)
@@ -250,6 +275,7 @@ def main():
                 )
                 prompt_id = submit_task(wf)
                 task.prompt_id = prompt_id
+                current_prompt_id[0] = prompt_id
             except Exception as e:
                 task.status = "error"
                 task.error = str(e)
@@ -261,6 +287,12 @@ def main():
                 continue
 
             while True:
+                if interrupt_requested.is_set():
+                    task.status = "error"
+                    task.error = "Cancelled by user"
+                    task.end_time = time.time()
+                    completed_count += 1
+                    break
                 status = get_task_status(prompt_id)
                 if status is not None:
                     status_str = status.get("status", {}).get("str", "success")
@@ -282,12 +314,14 @@ def main():
                         task.status = "done"
                         task.end_time = time.time()
                         completed_count += 1
+                    current_prompt_id[0] = None
                     break
                 if task.elapsed and task.elapsed > 3600:
                     task.status = "error"
                     task.error = "Timeout (>1h)"
                     task.end_time = time.time()
                     completed_count += 1
+                    current_prompt_id[0] = None
                     break
                 time.sleep(2)
                 live.update(render_table(tasks))
