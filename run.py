@@ -167,6 +167,7 @@ def build_workflow(
     height: int,
     duration: float,
     workflow_template: dict,
+    positive_prompt: str | None = None,
 ) -> dict:
     wf = json.loads(json.dumps(workflow_template))
 
@@ -175,6 +176,8 @@ def build_workflow(
     wf["321"]["inputs"]["duration"] = duration
     wf["322"]["inputs"]["value"] = width
     wf["323"]["inputs"]["value"] = height
+    if positive_prompt is not None:
+        wf["169"]["inputs"]["text"] = positive_prompt
 
     return wf
 
@@ -226,11 +229,20 @@ def main():
     signal.signal(signal.SIGTERM, handle_signal)
 
     if len(sys.argv) < 2:
-        console.print("[red]Usage: python run.py <folder_path> [workflow.json][/red]")
+        console.print(
+            "[red]Usage: python run.py <folder_path> [-p prompt] [workflow.json][/red]"
+        )
         sys.exit(1)
 
     folder = sys.argv[1]
-    workflow_path = sys.argv[2] if len(sys.argv) > 2 else "workflow.json"
+    positive_prompt = None
+    workflow_path = "workflow.json"
+    args = sys.argv[2:]
+    for i, arg in enumerate(args):
+        if arg == "-p" and i + 1 < len(args):
+            positive_prompt = args[i + 1]
+        else:
+            workflow_path = arg
 
     console.print(f"[cyan]Scanning folder:[/cyan] {folder}")
     image, audios = scan_folder(folder)
@@ -272,6 +284,7 @@ def main():
                     task.height,
                     task.duration,
                     workflow_template,
+                    positive_prompt,
                 )
                 prompt_id = submit_task(wf)
                 task.prompt_id = prompt_id
