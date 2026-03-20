@@ -237,12 +237,16 @@ def main():
     folder = sys.argv[1]
     positive_prompt = None
     workflow_path = "workflow.json"
-    args = sys.argv[2:]
-    for i, arg in enumerate(args):
-        if arg == "-p" and i + 1 < len(args):
-            positive_prompt = args[i + 1]
+    i = 2
+    while i < len(sys.argv):
+        arg = sys.argv[i]
+        if arg == "-p":
+            i += 1
+            if i < len(sys.argv):
+                positive_prompt = sys.argv[i]
         else:
             workflow_path = arg
+        i += 1
 
     console.print(f"[cyan]Scanning folder:[/cyan] {folder}")
     image, audios = scan_folder(folder)

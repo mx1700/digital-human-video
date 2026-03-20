@@ -10,5 +10,9 @@ if [ ! -d "$VENV_DIR" ]; then
     curl -sSL https://bootstrap.pypa.io/get-pip.py | "$VENV_DIR/bin/python3"
 fi
 
-"$VENV_DIR/bin/python3" -m pip install -r "$SCRIPT_DIR/requirements.txt"
+if ! "$VENV_DIR/bin/python3" -m pip show requests mutagen Pillow rich >/dev/null 2>&1; then
+    echo "[Installing dependencies...]"
+    "$VENV_DIR/bin/python3" -m pip install -r "$SCRIPT_DIR/requirements.txt"
+fi
+
 "$VENV_DIR/bin/python3" "$SCRIPT_DIR/run.py" "$@"
