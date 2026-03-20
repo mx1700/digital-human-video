@@ -10,4 +10,5 @@ if not exist "%VENV_DIR%" (
     "%VENV_DIR%\Scripts\pip.exe" install -r "%SCRIPT_DIR%requirements.txt"
 )
 
+"%VENV_DIR%\Scripts\pip.exe" install -r "%SCRIPT_DIR%requirements.txt" >nul 2>&1
 "%VENV_DIR%\Scripts\python.exe" "%SCRIPT_DIR%run.py" %*
