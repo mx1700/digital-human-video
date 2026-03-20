@@ -29,7 +29,7 @@ def interrupt_task():
             pass
 
 
-COMFYUI_URL = "http://100.91.232.13:8188"
+COMFYUI_URL: str = "http://localhost:8188"
 
 console = Console()
 
@@ -230,7 +230,7 @@ def main():
 
     if len(sys.argv) < 2:
         console.print(
-            "[red]Usage: python run.py <folder_path> [-p prompt] [workflow.json][/red]"
+            "[red]Usage: python run.py <folder_path> [--url URL] [-p prompt] [workflow.json][/red]"
         )
         sys.exit(1)
 
@@ -244,6 +244,10 @@ def main():
             i += 1
             if i < len(sys.argv):
                 positive_prompt = sys.argv[i]
+        elif arg in ("--url", "-u"):
+            i += 1
+            if i < len(sys.argv):
+                COMFYUI_URL = sys.argv[i]
         else:
             workflow_path = arg
         i += 1
