@@ -266,7 +266,7 @@ def main():
         tasks.append(Task(i + 1, audio, width, height, duration))
 
     console.print(f"[cyan]Loading workflow:[/cyan] {workflow_path}")
-    with open(workflow_path) as f:
+    with open(workflow_path, encoding="utf-8") as f:
         workflow_template = json.load(f)
 
     completed_count = 0
