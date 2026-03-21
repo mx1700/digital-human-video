@@ -5,6 +5,7 @@ import math
 import time
 import signal
 import shutil
+import random
 import threading
 from pathlib import Path
 from datetime import datetime
@@ -177,6 +178,7 @@ def build_workflow(
     wf["321"]["inputs"]["duration"] = duration
     wf["322"]["inputs"]["value"] = width
     wf["323"]["inputs"]["value"] = height
+    wf["292"]["inputs"]["seed"] = random.randint(0, 2**31 - 1)
     if positive_prompt is not None:
         wf["169"]["inputs"]["text"] = positive_prompt
 
