@@ -219,6 +219,43 @@ def render_table(tasks: list[Task]):
     return table
 
 
+def download_video(prompt_id: str, output_path: Path) -> bool:
+    response = requests.get(f"{COMFYUI_URL}/history/{prompt_id}")
+    if response.status_code != 200:
+        console.print(f"[red]Failed to get history: HTTP {response.status_code}[/red]")
+        return False
+    history = response.json().get(prompt_id, {})
+    outputs = history.get("outputs", {})
+    for node_id, node_output in outputs.items():
+        videos = node_output.get("videos", []) + node_output.get("gifs", [])
+        for video in videos:
+            filename = video.get("filename")
+            if not filename:
+                continue
+            params = {
+                "filename": filename,
+                "type": video.get("type", "output"),
+                "subfolder": video.get("subfolder", ""),
+            }
+            if video.get("format"):
+                params["format"] = video.get("format")
+            if video.get("frame_rate"):
+                params["frame_rate"] = video.get("frame_rate")
+            download_url = f"{COMFYUI_URL}/view"
+            resp = requests.get(download_url, params=params, stream=True)
+            if resp.status_code == 200:
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, "wb") as f:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                console.print(f"[green]Video downloaded:[/green] {output_path}")
+                return True
+            else:
+                console.print(f"[red]Download failed: HTTP {resp.status_code}[/red]")
+    console.print(f"[red]No video found in outputs[/red]")
+    return False
+
+
 def main():
     def handle_signal(signum, frame):
         interrupt_requested.set()
@@ -231,13 +268,15 @@ def main():
 
     if len(sys.argv) < 2:
         console.print(
-            "[red]Usage: python run.py <folder_path> [--url URL] [-p prompt] [workflow.json][/red]"
+            "[red]Usage: python run.py <folder_path> [--url URL] [-p prompt] [-o output_dir] [workflow.json][/red]"
         )
         sys.exit(1)
 
     folder = sys.argv[1]
     positive_prompt = None
     workflow_path = "workflow.json"
+    output_dir = None
+    global COMFYUI_URL
     i = 2
     while i < len(sys.argv):
         arg = sys.argv[i]
@@ -249,9 +288,18 @@ def main():
             i += 1
             if i < len(sys.argv):
                 COMFYUI_URL = sys.argv[i]
+        elif arg in ("--output", "-o"):
+            i += 1
+            if i < len(sys.argv):
+                output_dir = sys.argv[i]
         else:
             workflow_path = arg
         i += 1
+
+    input_folder = Path(folder)
+    if output_dir is None:
+        output_dir = input_folder
+    output_path = Path(output_dir)
 
     console.print(f"[cyan]Scanning folder:[/cyan] {folder}")
     image, audios = scan_folder(folder)
@@ -336,6 +384,9 @@ def main():
                         task.status = "done"
                         task.end_time = time.time()
                         completed_count += 1
+                        video_name = task.audio_path.stem + ".mp4"
+                        video_path = output_path / video_name
+                        download_video(prompt_id, video_path)
                     current_prompt_id[0] = None
                     break
                 if task.elapsed and task.elapsed > 3600:
