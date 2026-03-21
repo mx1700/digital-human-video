@@ -1,11 +1,11 @@
 {
   "153": {
     "inputs": {
-        "cfg": 1,
-        "model": [
-          "291",
-          0
-        ],
+      "cfg": 1,
+      "model": [
+        "291",
+        0
+      ],
       "positive": [
         "164",
         0
@@ -184,7 +184,7 @@
       "pix_fmt": "yuv420p",
       "crf": 19,
       "save_metadata": true,
-      "trim_to_audio": false,
+      "trim_to_audio": true,
       "pingpong": false,
       "save_output": true,
       "images": [
@@ -361,7 +361,7 @@
   },
   "292": {
     "inputs": {
-      "seed": 774927776696918,
+      "seed": 49200250096140,
       "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
@@ -539,7 +539,7 @@
   },
   "321": {
     "inputs": {
-      "audio": "05-未命名.wav",
+      "audio": "10.wav",
       "start_time": 0,
       "duration": 20.000000000000004
     },
@@ -680,7 +680,7 @@
   },
   "387": {
     "inputs": {
-      "value": "a*25",
+      "value": "(a+1)*25",
       "a": [
         "308",
         0
