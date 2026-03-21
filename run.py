@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import math
 import time
 import signal
 import shutil
@@ -262,7 +263,7 @@ def main():
 
     tasks: list[Task] = []
     for i, audio in enumerate(audios):
-        duration = get_audio_duration(str(audio))
+        duration = math.ceil(get_audio_duration(str(audio)))
         tasks.append(Task(i + 1, audio, width, height, duration))
 
     console.print(f"[cyan]Loading workflow:[/cyan] {workflow_path}")
